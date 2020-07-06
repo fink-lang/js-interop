@@ -1,0 +1,18 @@
+{describe, it, expect, to_equal} = import '@fink/jest'
+
+{apply} = import './reflect'
+{with_this} = import './this'
+
+
+describe 'this', fn:
+
+  it 'adds this to call', fn:
+    foo = with_this fn self, spam, ni:
+      [self, spam, ni]
+
+    this_obj = {'this'}
+
+    expect
+      apply foo, this_obj, ['ham', 'ni']
+      to_equal [this_obj, 'ham', 'ni']
+

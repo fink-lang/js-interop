@@ -1,0 +1,108 @@
+{describe, it, expect, to_equal} = import '@fink/jest'
+
+{
+  new, has, get, set, set_props,
+  delete_property, define_property, get_own_property_descriptor,
+  get_prototype_of, set_prototype_of,
+  is_extensible, prevent_extensions
+} = import './reflect'
+
+
+
+describe 'reflect', fn:
+
+  it 'gets prop value', fn:
+    expect
+      get {foo: 'bar'}, 'foo'
+      to_equal 'bar'
+
+
+  it 'has prop', fn:
+    expect
+      has {foo: 'bar'}, 'foo'
+      to_equal true
+
+
+  it 'deletes prop', fn:
+    foo = {foo: 'bar'}
+
+    delete_property foo, 'foo'
+
+    expect
+      has foo, 'foo'
+      to_equal false
+
+
+  it 'defines prop', fn:
+    foo = {}
+
+    define_property foo, 'foo', dict:
+      value: 'bar',
+      configurable: true
+      enumerable: true
+      writable: true
+
+    expect
+      get foo, 'foo'
+      to_equal 'bar'
+
+
+  it 'get prop descr', fn:
+    foo = {foo: 'bar'}
+
+    expect
+      get_own_property_descriptor foo, 'foo'
+      to_equal dict:
+        configurable: true
+        enumerable: true
+        writable: true
+        value: 'bar'
+
+
+  it 'sets single prop value', fn:
+    foo = {foo: 1}
+
+    set foo, 'bar', 2
+
+    expect
+      foo
+      to_equal {foo: 1, bar: 2}
+
+
+  it 'sets multiple prop values', fn:
+    foo = {foo: 1}
+
+    set_props foo, {bar: 2, spam: 3}
+
+    expect
+      foo
+      to_equal {foo: 1, bar: 2, spam: 3}
+
+
+  it 'seals obj', fn:
+    foo = {}
+
+    prevent_extensions foo
+
+    expect
+      is_extensible foo
+      to_equal false
+
+
+  it 'updates proto', fn:
+    foo = {}
+
+    set_prototype_of foo, String.prototype
+
+    expect
+      get_prototype_of foo
+      to_equal String.prototype
+
+
+describe 'new', fn:
+  it 'creates instance of class', fn:
+    enc = new String, 'foobar'
+
+    expect
+      enc.constructor
+      to_equal String
