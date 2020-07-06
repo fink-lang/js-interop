@@ -1,0 +1,21 @@
+{describe, it, expect, to_equal, to_not_equal} = import '@fink/jest'
+
+{obj_to_json} = import '@fink/std-lib/json'
+
+{null, undefined} = import './nullish'
+
+
+describe 'null, undefined', fn:
+  it 'exports JS null', fn:
+    expect
+      obj_to_json null
+      to_equal 'null'
+
+
+  it 'exports JS undefined', fn:
+    func = fn foo: foo
+
+    expect
+      func _
+      to_equal
+        undefined
