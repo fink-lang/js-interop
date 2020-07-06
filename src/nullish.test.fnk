@@ -1,4 +1,4 @@
-{describe, it, expect, to_equal, to_not_equal} = import '@fink/jest'
+{describe, it, expect, to_equal} = import '@fink/jest'
 
 {obj_to_json} = import '@fink/std-lib/json'
 
