@@ -8,6 +8,7 @@
   get_type, is_instance
 } = import './reflect'
 
+{String, Array} = import './globals'
 
 
 describe 'reflect', fn:

@@ -21,7 +21,7 @@
     "build": "run build:*",
     "build:dir": "mkdir -p ./build/pkg/",
     "build:fnk": "fnk --src ./src --out-dir build/pkg --ignore './src/**/*.test.fnk'",
-    "build:js": "cp ./src/this.js ./src/reflect.js ./src/nullish.js ./build/pkg/",
+    "build:js": "cp ./src/globals.js ./src/this.js ./src/reflect.js ./src/nullish.js ./build/pkg/",
     "build:files": "cp ./package.json ./README.md ./LICENSE ./build/pkg/",
     "test": "run jest",
     "jest": "jest --verbose --runInBand --no-cache ",

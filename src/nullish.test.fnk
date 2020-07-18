@@ -1,6 +1,7 @@
 {describe, it, expect, to_equal} = import '@fink/jest'
 
 {null, undefined} = import './nullish'
+{JSON} = import './globals'
 
 
 describe 'null, undefined', fn:
