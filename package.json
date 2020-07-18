@@ -21,7 +21,7 @@
     "build": "run build:*",
     "build:dir": "mkdir -p ./build/pkg/",
     "build:fnk": "fnk --src ./src --out-dir build/pkg --ignore './src/**/*.test.fnk'",
-    "build:js": "cp ./src/this.js ./src/nullish.js ./build/pkg/",
+    "build:js": "cp ./src/globals.js ./src/this.js ./src/reflect.js ./src/nullish.js ./build/pkg/",
     "build:files": "cp ./package.json ./README.md ./LICENSE ./build/pkg/",
     "test": "run jest",
     "jest": "jest --verbose --runInBand --no-cache ",
@@ -29,11 +29,10 @@
     "release": "semantic-release"
   },
   "devDependencies": {
-    "@fink/cli": "^6.0.0",
+    "@fink/cli": "^6.1.0",
     "@fink/jest": "^5.0.0",
     "@fink/larix": "^12.0.0",
-    "@fink/loxia": "^12.0.0",
-    "@fink/std-lib": "^2.4.0",
+    "@fink/loxia": "^12.0.2",
     "commitizen": "^4.0.5",
     "cz-conventional-changelog": "^3.1.0",
     "jest-cli": "^26.1.0",

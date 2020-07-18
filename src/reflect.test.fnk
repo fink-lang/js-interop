@@ -4,9 +4,11 @@
   new, has, get, set, set_props,
   delete_property, define_property, get_own_property_descriptor,
   get_prototype_of, set_prototype_of,
-  is_extensible, prevent_extensions
+  is_extensible, prevent_extensions,
+  get_type, is_instance
 } = import './reflect'
 
+{String, Array} = import './globals'
 
 
 describe 'reflect', fn:
@@ -106,3 +108,21 @@ describe 'new', fn:
     expect
       enc.constructor
       to_equal String
+
+
+
+describe 'typeof', fn:
+  it 'gets type of obj', fn:
+    expect
+      get_type 'foobar'
+      to_equal 'string'
+
+
+
+describe 'instanceof', fn:
+  it 'check instanceof', fn:
+    expect
+      is_instance [], Array
+      to_equal true
+
+
