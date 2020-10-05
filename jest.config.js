@@ -1,14 +1,19 @@
 
-module.exports = {
+export default {
   testEnvironment: 'node',
   setupFiles: [],
   moduleFileExtensions: ['js', 'fnk'],
   transform: {
-    '^.+\\.fnk$': ['@fink/jest/transform']
+    '^.+\\.fnk$': ['@fink/jest/transform.js'],
+    '^.+\\.js$': [
+      'babel-jest',
+      {presets: [['@babel/preset-env', {targets: {node: 'current'}}]]}
+    ],
   },
   transformIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/build/'],
 
-  snapshotResolver: '@fink/jest/snapshot-resolver',
+  resolver: '@fink/jest/cjs/module-resolver.js',
+  snapshotResolver: '@fink/jest/snapshot-resolver.js',
 
   modulePathIgnorePatterns: ['<rootDir>/build/'],
 

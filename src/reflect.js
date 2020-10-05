@@ -1,26 +1,21 @@
+export const ˆnew = (cls, ...args)=> Reflect.construct(cls, args);
 
-exports.ˆnew = (cls, ...args)=> Reflect.construct(cls, args);
 
-exports.apply = Reflect.apply;
+export const apply = /*@__PURE__*/ (()=> Reflect.apply)();
+export const has = /*@__PURE__*/ (()=> Reflect.has)();
+export const get = /*@__PURE__*/ (()=> Reflect.get)();
+export const set = /*@__PURE__*/ (()=> Reflect.set)();
+export const own_keys = /*@__PURE__*/ (()=> Reflect.ownKeys)();
+export const delete_property = /*@__PURE__*/ (()=> Reflect.deleteProperty)();
+export const define_property = /*@__PURE__*/ (()=> Reflect.defineProperty)();
+export const get_own_property_descriptor = /*@__PURE__*/ (()=> Reflect.getOwnPropertyDescriptor)();
+export const get_prototype_of = /*@__PURE__*/ (()=> Reflect.getPrototypeOf)();
+export const set_prototype_of = /*@__PURE__*/ (()=> Reflect.setPrototypeOf)();
+export const is_extensible = /*@__PURE__*/ (()=> Reflect.isExtensible)();
+export const prevent_extensions = /*@__PURE__*/ (()=> Reflect.preventExtensions)();
 
-exports.has = Reflect.has;
-exports.get = Reflect.get;
-exports.set = Reflect.set;
-exports.set_props = Object.assign;
+export const set_props = /*@__PURE__*/ (()=> Object.assign)();
 
-exports.delete_property = Reflect.deleteProperty;
-exports.define_property = Reflect.defineProperty;
+export const get_type = /*@__PURE__*/ (obj)=> typeof obj;
 
-exports.own_keys = Reflect.ownKeys;
-
-exports.get_own_property_descriptor = Reflect.getOwnPropertyDescriptor;
-
-exports.get_prototype_of = Reflect.getPrototypeOf;
-exports.set_prototype_of = Reflect.setPrototypeOf;
-
-exports.is_extensible = Reflect.isExtensible;
-exports.prevent_extensions = Reflect.preventExtensions;
-
-exports.get_type = (obj)=> typeof obj;
-
-exports.is_instance = (obj, cls)=> obj instanceof cls;
+export const is_instance = (obj, cls)=> obj instanceof cls;
