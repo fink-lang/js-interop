@@ -1,10 +1,10 @@
 {describe, it, expect, to_equal} = import '@fink/jest/test.fnk'
 
 {
-  new, has, get, set, set_props,
-  delete_property, define_property, get_own_property_descriptor,
-  get_prototype_of, set_prototype_of,
-  is_extensible, prevent_extensions,
+  new, has, get, set, set_props
+  delete_property, define_property, get_own_property_descriptor
+  get_prototype_of, set_prototype_of
+  is_extensible, prevent_extensions
   get_type, is_instance
 } = import './reflect.js'
 
