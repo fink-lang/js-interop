@@ -1,4 +1,4 @@
-{describe, it, expect, to_equal} = import '@fink/jest'
+{describe, it, expect, to_equal} = import '@fink/jest/test.js'
 
 {apply} = import './reflect'
 {with_this} = import './this'

@@ -5,6 +5,14 @@
   "engines": {
     "node": ">=14.0.0"
   },
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    "./": {
+      "import": "./",
+      "require": "./cjs/"
+    }
+  },
   "private": false,
   "publishConfig": {
     "access": "public"
@@ -19,9 +27,10 @@
     "default": "run clean test build",
     "clean": "rimraf ./build",
     "build": "run build:*",
-    "build:dir": "mkdir -p ./build/pkg/",
-    "build:fnk": "fnk --src ./src --out-dir build/pkg --ignore './src/**/*.test.fnk'",
-    "build:js": "cp ./src/globals.js ./src/this.js ./src/reflect.js ./src/nullish.js ./build/pkg/",
+    "build:dir": "mkdir -p ./build/pkg",
+    "build:fnk-esm": "cp src/globals.js src/nullish.js src/reflect.js src/this.js ./build/pkg/",
+    "build:fnk-cjs": "babel --config-file ./babel.build-cjs.config.js --out-dir build/pkg/cjs ./src/*.js",
+    "build:pkg-cjs": "cp ./package-cjs.json build/pkg/cjs/package.json",
     "build:files": "cp ./package.json ./README.md ./LICENSE ./build/pkg/",
     "test": "run jest",
     "jest": "jest --verbose --runInBand --no-cache ",
@@ -29,15 +38,18 @@
     "release": "semantic-release"
   },
   "devDependencies": {
-    "@fink/cli": "^6.2.1",
-    "@fink/jest": "^5.2.1",
-    "@fink/larix": "^12.2.1",
-    "@fink/loxia": "^12.2.1",
+    "@babel/cli": "^7.11.6",
+    "@babel/preset-env": "^7.11.5",
+    "@fink/cli": "^7.0.0",
+    "@fink/jest": "^6.0.0",
+    "@fink/larix": "^12.3.0",
+    "@fink/loxia": "^13.0.0",
+    "babel-jest": "^26.3.0",
     "commitizen": "^4.0.5",
     "cz-conventional-changelog": "^3.1.0",
     "jest-cli": "^26.1.0",
     "npx-run": "^2.1.2",
-    "semantic-release": "^17.1.1"
+    "semantic-release": "^17.1.2"
   },
   "config": {
     "commitizen": {
