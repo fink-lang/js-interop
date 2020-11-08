@@ -11,6 +11,19 @@ class Iterator {
       it = next_it
     }
   }
+
+  async *[Symbol.asyncIterator]() {
+    let it = this;
+    let value, next_it, accu;
+    while (true) {
+      [value, next_it, accu] = await it.next(accu);
+      if (next_it.done) {
+        return;
+      }
+      yield value;
+      it = next_it
+    }
+  }
 }
 
 
@@ -209,24 +222,22 @@ export const _iter_ = (iterable)=> {
 }
 
 
-
-class LoopIterator extends Iterator {
-  constructor(step_fn, num_args, async, spread_result, iterable, accu) {
+class SpreadableIterator extends Iterator {
+  constructor(step_fn, num_args, spread_result, input, accu) {
     super();
-    this.iterable = iterable;
+    this.input = input;
     this.step_fn = step_fn;
     this.num_args = num_args;
-    this.async = async;
     this.spread_result = spread_result;
     this.accu = accu;
   }
 }
 
 
+class MappingIterator extends SpreadableIterator {
 
-class MappingIterator extends LoopIterator {
   next(shared_accu) {
-    const {iterable, num_args, spread_result, step_fn, async} = this;
+    const {input: iterable, num_args, spread_result, step_fn} = this;
     const use_accu = num_args > 1;
     let value, next_shared_accu;
     let {accu} = this;
@@ -248,28 +259,79 @@ class MappingIterator extends LoopIterator {
       return _next_(
         chain(
           _iter_(value),
-          new MappingIterator(step_fn, num_args, async, spread_result, next_it, accu),
+          new MappingIterator(step_fn, num_args, spread_result, next_it, accu),
         ),
         next_shared_accu
       );
     }
     return [
       value,
-      new MappingIterator(step_fn, num_args, async, spread_result, next_it, accu),
+      new MappingIterator(step_fn, num_args, spread_result, next_it, accu),
+      next_shared_accu
+    ];
+  }
+}
+
+
+class AsyncMappingIterator extends SpreadableIterator {
+  async next(shared_accu) {
+    const {input: iterable, num_args, spread_result, step_fn} = this;
+    const use_accu = num_args > 1;
+    let value, next_shared_accu;
+    let {accu} = this;
+
+    const [item, next_it, step_accu=shared_accu] = await _next_(iterable, shared_accu);
+
+    if (is_done(next_it)) {
+      return [undefined, next_it, step_accu];
+    }
+
+    if (use_accu) {
+      [value, accu, next_shared_accu=step_accu] = await step_fn(item, accu, step_accu);
+    } else {
+      value = await step_fn(item);
+      next_shared_accu=step_accu;
+    }
+
+    if (spread_result) {
+      return _next_(
+        chain_async(
+          _iter_(value),
+          new AsyncMappingIterator(step_fn, num_args, spread_result, next_it, accu),
+        ),
+        next_shared_accu
+      );
+    }
+    return [
+      value,
+      new AsyncMappingIterator(step_fn, num_args, spread_result, next_it, accu),
       next_shared_accu
     ];
   }
 }
 
 export const _map_ = (step_fn, num_args, async, spread_result)=> (iterable)=> (
-  new MappingIterator(step_fn, num_args, async, spread_result, _iter_(iterable), undefined)
+  async
+    ? new AsyncMappingIterator(step_fn, num_args, spread_result, _iter_(iterable), undefined)
+    : new MappingIterator(step_fn, num_args, spread_result, _iter_(iterable), undefined)
 );
 
 
 
+class LoopIterator extends Iterator {
+  constructor(step_fn, num_args, iterable, accu) {
+    super();
+    this.iterable = iterable;
+    this.step_fn = step_fn;
+    this.num_args = num_args;
+    this.accu = accu;
+  }
+}
+
+
 class FilteringIterator extends LoopIterator {
   next(shared_accu) {
-    const {num_args, spread_result, step_fn, async} = this;
+    const {num_args, step_fn} = this;
     const use_accu = num_args > 1;
 
     let value, step_accu, item;
@@ -293,7 +355,7 @@ class FilteringIterator extends LoopIterator {
       if (value === true) {
         return [
           item,
-          new FilteringIterator(step_fn, num_args, async, spread_result, it, accu),
+          new FilteringIterator(step_fn, num_args, it, accu),
           next_shared_accu
         ];
       }
@@ -301,15 +363,51 @@ class FilteringIterator extends LoopIterator {
   }
 }
 
-export const _filter_ = (step_fn, num_args, async, spread_result)=> (iterable)=> (
-  new FilteringIterator(step_fn, num_args, async, spread_result, _iter_(iterable), undefined)
+class AsyncFilteringIterator extends LoopIterator {
+  async next(shared_accu) {
+    const {num_args, step_fn} = this;
+    const use_accu = num_args > 1;
+
+    let value, step_accu, item;
+    let next_shared_accu = shared_accu;
+    let {accu, iterable: it} = this;
+
+    while(true) {
+      [item, it, step_accu=next_shared_accu] = await _next_(it, next_shared_accu);
+      if (is_done(it)) {
+        return [undefined, it, step_accu];
+      }
+
+      let value;
+      if (use_accu) {
+        [value, accu, next_shared_accu=step_accu] = await step_fn(item, accu, step_accu);
+      } else {
+        value = await step_fn(item);
+        next_shared_accu = step_accu
+      }
+
+      if (value === true) {
+        return [
+          item,
+          new AsyncFilteringIterator(step_fn, num_args, it, accu),
+          next_shared_accu
+        ];
+      }
+    }
+  }
+}
+
+export const _filter_ = (step_fn, num_args, async)=> (iterable)=> (
+  async
+    ? new AsyncFilteringIterator(step_fn, num_args, _iter_(iterable), undefined)
+    : new FilteringIterator(step_fn, num_args, _iter_(iterable), undefined)
 );
 
 
-
+// TODO: same as filter, except we exit on first non True
 class WhileIterator extends LoopIterator {
   next(shared_accu) {
-    const {num_args, step_fn, async} = this;
+    const {num_args, step_fn} = this;
     const use_accu = num_args > 1;
 
     let value, step_accu, item;
@@ -332,7 +430,7 @@ class WhileIterator extends LoopIterator {
     if (value === true) {
       return [
         item,
-        new WhileIterator(step_fn, num_args, async, false, it, accu),
+        new WhileIterator(step_fn, num_args, it, accu),
         next_shared_accu
       ];
     }
@@ -340,15 +438,51 @@ class WhileIterator extends LoopIterator {
   }
 }
 
+class AsyncWhileIterator extends LoopIterator {
+  async next(shared_accu) {
+    const {num_args, step_fn} = this;
+    const use_accu = num_args > 1;
+
+    let value, step_accu, item;
+    let next_shared_accu = shared_accu;
+    let {accu, iterable: it} = this;
+
+    [item, it, step_accu=next_shared_accu] = await _next_(it, next_shared_accu);
+
+    if (is_done(it)) {
+      return [undefined, it, step_accu];
+    }
+
+    if (use_accu) {
+      [value, accu, next_shared_accu=step_accu] = await step_fn(item, accu, step_accu);
+    } else {
+      value = await step_fn(item);
+      next_shared_accu = step_accu;
+    }
+
+    if (value === true) {
+      return [
+        item,
+        new AsyncWhileIterator(step_fn, num_args, it, accu),
+        next_shared_accu
+      ];
+    }
+    return [undefined, emtpy_iter, next_shared_accu];
+  }
+}
+
+
 export const _while_ = (step_fn, num_args, async)=> (iterable)=> (
-  new WhileIterator(step_fn, num_args, async, false, _iter_(iterable), undefined)
+  async
+    ? new AsyncWhileIterator(step_fn, num_args, _iter_(iterable), undefined)
+    : new WhileIterator(step_fn, num_args, _iter_(iterable), undefined)
 );
 
 
 
 class UntilIterator extends LoopIterator {
   next(shared_accu) {
-    const {num_args, step_fn, async} = this;
+    const {num_args, step_fn} = this;
     const use_accu = num_args > 1;
 
     let value, item, step_accu;
@@ -378,31 +512,61 @@ class UntilIterator extends LoopIterator {
 
     return [
       item,
-      new UntilIterator(step_fn, num_args, async, false, it, accu),
+      new UntilIterator(step_fn, num_args, it, accu),
+      next_shared_accu
+    ];
+  }
+}
+
+class AsyncUntilIterator extends LoopIterator {
+  async next(shared_accu) {
+    const {num_args, step_fn} = this;
+    const use_accu = num_args > 1;
+
+    let value, item, step_accu;
+    let next_shared_accu = shared_accu;
+    let {accu, iterable: it} = this;
+
+    [item, it, step_accu=next_shared_accu] = await _next_(it, next_shared_accu);
+
+    if (is_done(it)) {
+      return [undefined, it, step_accu];
+    }
+
+    if (use_accu) {
+      [value, accu, next_shared_accu=step_accu] = await step_fn(item, accu, step_accu);
+    } else {
+      value = await step_fn(item);
+      next_shared_accu = step_accu
+    }
+
+    if (value === true) {
+      return [
+        item,
+        iterator((_, shared_accu)=> [undefined, emtpy_iter, shared_accu]),
+        next_shared_accu
+      ];
+    }
+
+    return [
+      item,
+      new AsyncUntilIterator(step_fn, num_args, it, accu),
       next_shared_accu
     ];
   }
 }
 
 export const _until_ = (step_fn, num_args, async)=> (iterable)=> (
-  new UntilIterator(step_fn, num_args, async, false, _iter_(iterable), undefined)
+  async
+    ? new AsyncUntilIterator(step_fn, num_args, _iter_(iterable), undefined)
+    : new UntilIterator(step_fn, num_args, _iter_(iterable), undefined)
 );
 
 
 
-class UnfoldingIterator extends Iterator {
-  constructor(step_fn, num_args, async, spread_result, prev, accu) {
-    super();
-    this.prev = prev;
-    this.step_fn = step_fn;
-    this.num_args = num_args;
-    this.async = async;
-    this.spread_result = spread_result;
-    this.accu = accu;
-  }
-
+class UnfoldingIterator extends SpreadableIterator {
   next(shared_accu) {
-    const {num_args, step_fn, async, spread_result, prev} = this;
+    const {num_args, step_fn, spread_result, input: prev} = this;
     const use_accu = num_args > 1;
 
     let value;
@@ -420,14 +584,56 @@ class UnfoldingIterator extends Iterator {
       return _next_(
         chain(
           _iter_(value),
-          new UnfoldingIterator(step_fn, num_args, async, spread_result, value, accu),
+          new UnfoldingIterator(step_fn, num_args, spread_result, value, accu),
         ),
         next_shared_accu
       );
     }
     return [
       value,
-      new UnfoldingIterator(step_fn, num_args, async, spread_result, value, accu),
+      new UnfoldingIterator(step_fn, num_args, spread_result, value, accu),
+      next_shared_accu
+    ];
+  }
+}
+
+class AsyncUnfoldingIterator extends Iterator {
+  constructor(step_fn, num_args, spread_result, prev, accu) {
+    super();
+    this.prev = prev;
+    this.step_fn = step_fn;
+    this.num_args = num_args;
+    this.spread_result = spread_result;
+    this.accu = accu;
+  }
+
+  async next(shared_accu) {
+    const {num_args, step_fn, spread_result, prev} = this;
+    const use_accu = num_args > 1;
+
+    let value;
+    let next_shared_accu = shared_accu;
+    let {accu} = this;
+
+    if (use_accu) {
+      [value, accu, next_shared_accu=shared_accu] = await step_fn(prev, accu, shared_accu);
+    } else {
+      value = await step_fn(prev);
+      next_shared_accu = shared_accu;
+    }
+
+    if (spread_result) {
+      return await _next_(
+        chain_async(
+          _iter_(value),
+          new UnfoldingIterator(step_fn, num_args, spread_result, value, accu),
+        ),
+        next_shared_accu
+      );
+    }
+    return [
+      value,
+      new AsyncUnfoldingIterator(step_fn, num_args, spread_result, value, accu),
       next_shared_accu
     ];
   }
@@ -435,15 +641,17 @@ class UnfoldingIterator extends Iterator {
 
 
 export const _unfold_ = (step_fn, num_args, async, spread_result)=> (prev)=> (
-  new UnfoldingIterator(step_fn, num_args, async, spread_result, prev, undefined)
+  async
+    ? new AsyncUnfoldingIterator(step_fn, num_args, spread_result, prev, undefined)
+    : new UnfoldingIterator(step_fn, num_args, spread_result, prev, undefined)
 );
 
 
 
-export const _fold_ = (reducer, num_args)=> (iterable)=> {
+export const fold_sync = (reducer, num_args, result)=> (iterable)=> {
   const use_accu = num_args > 2;
   let it = _iter_(iterable);
-  let result, accu, item, shared_accu, step_accu;
+  let accu, item, shared_accu, step_accu;
 
   while (true) {
     [item, it, step_accu=shared_accu] = _next_(it, step_accu);
@@ -457,7 +665,34 @@ export const _fold_ = (reducer, num_args)=> (iterable)=> {
       shared_accu = step_accu;
     }
   }
-}
+};
+
+
+export const fold_async = (reducer, num_args, result)=> async (iterable)=> {
+  const use_accu = num_args > 2;
+  let it = _iter_(iterable);
+  let accu, item, shared_accu, step_accu;
+
+  while (true) {
+    [item, it, step_accu=shared_accu] = await _next_(it, step_accu);
+    if (is_done(it)) {
+      return result;
+    }
+    if (use_accu) {
+      [result, accu, shared_accu=step_accu] = await reducer(item, result, accu, step_accu);
+    } else {
+      result = await reducer(item, result);
+      shared_accu = step_accu;
+    }
+  }
+};
+
+
+export const _fold_ = (reducer, num_args, is_async, initial)=> (
+  is_async
+    ? fold_async(reducer, num_args, initial)
+    : fold_sync(reducer, num_args, initial)
+);
 
 
 
@@ -487,7 +722,33 @@ class ChainIterator extends Iterator {
   }
 }
 
+class AsyncChainIterator extends Iterator {
+  constructor(iters) {
+    super();
+    this.iters = iters;
+  }
+
+  async next(shared_accu) {
+    let {iters} = this;
+    let it, item, next_shared_accu;
+
+    while (true) {
+      [it, ...iters] = iters;
+      [item, it, next_shared_accu=shared_accu] = await _next_(it, shared_accu);
+
+      if (is_done(it)) {
+        if (iters.length === 0) {
+          return [undefined, it, next_shared_accu];
+        }
+        shared_accu = next_shared_accu;
+      } else {
+        return [item, new AsyncChainIterator([it, ...iters]), next_shared_accu];
+      }
+    }
+  }
+}
 const chain = (...iterables)=> new ChainIterator(iterables);
+const chain_async = (...iterables)=> new AsyncChainIterator(iterables);
 
 
 
