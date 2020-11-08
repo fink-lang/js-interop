@@ -21,6 +21,14 @@ expect_iter = fn actual, expectation:
     expectation
 
 
+expect_iter_a = fn actual, expectation:
+  expect
+    await pipe actual:
+      fold await item, items=[]:
+        [...items, item]
+    expectation
+
+
 
 describe _map_, fn:
   it 'maps items', fn:
@@ -47,6 +55,31 @@ describe _map_, fn:
         ['1', '1', '2', '2', '3', '3']
 
 
+  it 'maps items async', fn:
+    expect_iter_a
+      '123' | map await item:
+        await 'foo${item}'
+      to_equal
+        ['foo1', 'foo2', 'foo3']
+
+
+  it 'maps items with accu  async', fn:
+    expect_iter_a
+      'abc' | map await item, acc=1:
+        ['${item}${acc}', await acc + 1]
+      to_equal
+        ['a1', 'b2', 'c3']
+
+
+  it 'maps items with spread  async', fn:
+    expect_iter_a
+      '123' | map await item:
+        ...[item, await item]
+      to_equal
+        ['1', '1', '2', '2', '3', '3']
+
+
+
 
 describe _filter_, fn:
   it 'keeps items', fn:
@@ -56,9 +89,26 @@ describe _filter_, fn:
       to_equal
         [2, 4]
 
+
   it 'keeps items with accu', fn:
     expect_iter
       [1, 2, 3, 4] | filter item, cntr=1:
+        [0 == (item * cntr) % 2, cntr + 1]
+      to_equal
+        [2, 4]
+
+
+  it 'keeps items async', fn:
+    expect_iter_a
+      [1, 2, 3, 4] | filter await item:
+        await 0 == item % 2
+      to_equal
+        [2, 4]
+
+
+  it 'keeps items with accu async', fn:
+    expect_iter_a
+      [1, 2, 3, 4] | filter await item, cntr=1:
         [0 == (item * cntr) % 2, cntr + 1]
       to_equal
         [2, 4]
@@ -73,6 +123,7 @@ describe _while_, fn:
       to_equal
         [1, 2, 3]
 
+
   it 'keeps all', fn:
     expect_iter
       [1, 2, 3, 4, 5] | while item:
@@ -80,10 +131,35 @@ describe _while_, fn:
       to_equal
         [1, 2, 3, 4, 5]
 
+
   it 'keeps items with accu', fn:
     expect_iter
       [1, 2, 3, 4, 5] | while item, acc=5:
         [acc - item > 0, acc - 1]
+      to_equal
+        [1, 2]
+
+
+  it 'keeps items while condition holds true async', fn:
+    expect_iter_a
+      [1, 2, 3, 4, 5] | while await item:
+        await item < 4
+      to_equal
+        [1, 2, 3]
+
+
+  it 'keeps all async', fn:
+    expect_iter_a
+      [1, 2, 3, 4, 5] | while await item:
+        await item > 0
+      to_equal
+        [1, 2, 3, 4, 5]
+
+
+  it 'keeps items with accu async', fn:
+    expect_iter_a
+      [1, 2, 3, 4, 5] | while await item, acc=5:
+        [acc - item > 0, await acc - 1]
       to_equal
         [1, 2]
 
@@ -97,6 +173,7 @@ describe _until_, fn:
       to_equal
         [1, 2, 3, 4, 5]
 
+
   it 'keeps all', fn:
     expect_iter
       [1, 2, 3, 4, 5] | until item:
@@ -104,10 +181,35 @@ describe _until_, fn:
       to_equal
         [1, 2, 3, 4, 5]
 
+
   it 'keeps items with accu', fn:
     expect_iter
       [1, 2, 3, 4, 5] | until item, acc=5:
         [acc - item == 0, acc - 1]
+      to_equal
+        [1, 2, 3]
+
+
+it 'keeps items until condition is true async', fn:
+    expect_iter_a
+      [1, 2, 3, 4, 5] | until await item:
+        await item == 5
+      to_equal
+        [1, 2, 3, 4, 5]
+
+
+  it 'keeps all async', fn:
+    expect_iter_a
+      [1, 2, 3, 4, 5] | until await item:
+        await item == 0
+      to_equal
+        [1, 2, 3, 4, 5]
+
+
+  it 'keeps items with accu async', fn:
+    expect_iter_a
+      [1, 2, 3, 4, 5] | until await item, acc=5:
+        [acc - item == 0, await acc - 1]
       to_equal
         [1, 2, 3]
 
@@ -121,11 +223,34 @@ describe _fold_, fn:
       to_equal
         '321'
 
+  it 'folds empty', fn:
+    expect
+      '' | fold item, prev='foobar':
+        '${item}${prev}'
+      to_equal
+        'foobar'
+
 
   it 'folds items with accu', fn:
     expect
       'abc' | fold item, prev='', acc=0:
         ['${prev},${item}${acc}', acc + 1]
+      to_equal
+        ',a0,b1,c2'
+
+
+  it 'folds items async ', fn:
+    expect
+      await '123' | fold await item, prev='':
+        '${item}${await prev}'
+      to_equal
+        '321'
+
+
+  it 'folds items with accu', fn:
+    expect
+      await 'abc' | fold await item, prev='', acc=0:
+        ['${prev},${item}${acc}', await acc + 1]
       to_equal
         ',a0,b1,c2'
 
@@ -160,6 +285,47 @@ describe _unfold_, fn:
           ...[1, 2, 3]
 
         until item, seen=false:
+          [item == 2 and seen, seen or item == 2]
+
+      to_equal
+        [1, 2, 3, 1, 2]
+
+    [foo, bar, spam, shrub] = [1, 2, 3] | unfold items: ...items
+
+    expect_iter
+      [foo, bar, spam, shrub]
+      to_equal
+        [1, 2, 3, 1]
+
+
+  it 'creates items from previous async ', fn:
+    expect_iter_a
+      pipe 0:
+        unfold await prev:
+          await prev + 1
+        while await item:
+          item < 5
+      to_equal
+        [1, 2, 3, 4]
+
+  it 'creates items with accu async', fn:
+    expect_iter_a
+      pipe 0:
+        unfold await prev, accu=1:
+          [prev + accu, await accu * 2]
+        while await item:
+          item < 20
+      to_equal
+        [1, 3, 7, 15]
+
+
+  it 'creates items with spread async', fn:
+    expect_iter_a
+      pipe:
+        unfold await _:
+          ...[1, 2, 3]
+
+        until await item, seen=false:
           [item == 2 and seen, seen or item == 2]
 
       to_equal
@@ -366,6 +532,22 @@ describe 'other iterables', fn:
         map item: item
       to_equal
         [['foo', 12], ['bar', 42]]
+
+
+
+describe 'JS async iterable', fn:
+  it 'provides async iterable', fn:
+    [await item1, item2] = '1234' | filter await item: item != '1'
+    expect
+      [item1, item2]
+      to_equal ['2', '3']
+
+
+  it 'exhausts async iterable', fn:
+    [await item] = '1234' | filter await item: item == '0'
+    expect
+      item
+      to_equal undefined
 
 
 
