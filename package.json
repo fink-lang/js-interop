@@ -28,7 +28,7 @@
     "clean": "rimraf ./build",
     "build": "run build:*",
     "build:dir": "mkdir -p ./build/pkg",
-    "build:esm": "cp src/globals.js src/nullish.js src/reflect.js src/this.js ./build/pkg/",
+    "build:esm": "cp src/runtime.js src/globals.js src/nullish.js src/reflect.js src/this.js ./build/pkg/",
     "build:cjs": "babel --config-file ./babel.build-cjs.config.js --out-dir build/pkg/cjs ./src/*.js",
     "build:pkg-cjs": "cp ./package-cjs.json build/pkg/cjs/package.json",
     "build:files": "cp ./package.json ./README.md ./LICENSE ./build/pkg/",
@@ -40,15 +40,15 @@
   "devDependencies": {
     "@babel/cli": "^7.11.6",
     "@babel/preset-env": "^7.11.5",
-    "@fink/jest": "^6.0.0",
-    "@fink/larix": "^13.1.0",
-    "@fink/loxia": "^14.0.2",
+    "@fink/jest": "^7.0.0",
+    "@fink/larix": "^15.2.0",
+    "@fink/loxia": "^18.2.0",
     "babel-jest": "^26.5.2",
     "commitizen": "^4.0.5",
     "cz-conventional-changelog": "^3.1.0",
-    "jest-cli": "^26.5.2",
+    "jest-cli": "^26.5.3",
     "npx-run": "^2.1.2",
-    "semantic-release": "^17.1.2"
+    "semantic-release": "^17.2.1"
   },
   "config": {
     "commitizen": {
