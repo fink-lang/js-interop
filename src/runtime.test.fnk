@@ -1,0 +1,508 @@
+
+{describe, it, expect, to_equal} = import '@fink/jest/test.fnk'
+
+{_map_, _filter_, _until_, _while_, _fold_, _unfold_, _in_} = import './runtime.js'
+
+{_sort_, _reverse_, _join_, _zip_} = import './runtime.js'
+{_iter_, _next_, _is_empty_, _len_} = import './runtime.js'
+
+{new} = import './reflect.js'
+{Set, Map, Symbol} = import './globals.js'
+{null, undefined} = import './nullish.js'
+
+
+js_iter = fn obj:
+  obj.(Symbol.iterator) _
+
+
+expect_iter = fn actual, expectation:
+  expect
+    [... actual]
+    expectation
+
+
+
+describe _map_, fn:
+  it 'maps items', fn:
+    expect_iter
+      '123' | map item:
+        'foo${item}'
+      to_equal
+        ['foo1', 'foo2', 'foo3']
+
+
+  it 'maps items with accu', fn:
+    expect_iter
+      'abc' | map item, acc=1:
+        ['${item}${acc}', acc + 1]
+      to_equal
+        ['a1', 'b2', 'c3']
+
+
+  it 'maps items with spread', fn:
+    expect_iter
+      '123' | map item:
+        ...[item, item]
+      to_equal
+        ['1', '1', '2', '2', '3', '3']
+
+
+
+describe _filter_, fn:
+  it 'keeps items', fn:
+    expect_iter
+      [1, 2, 3, 4] | filter item:
+        0 == item % 2
+      to_equal
+        [2, 4]
+
+  it 'keeps items with accu', fn:
+    expect_iter
+      [1, 2, 3, 4] | filter item, cntr=1:
+        [0 == (item * cntr) % 2, cntr + 1]
+      to_equal
+        [2, 4]
+
+
+
+describe _while_, fn:
+  it 'keeps items while condition holds true', fn:
+    expect_iter
+      [1, 2, 3, 4, 5] | while item:
+        item < 4
+      to_equal
+        [1, 2, 3]
+
+  it 'keeps all', fn:
+    expect_iter
+      [1, 2, 3, 4, 5] | while item:
+        item > 0
+      to_equal
+        [1, 2, 3, 4, 5]
+
+  it 'keeps items with accu', fn:
+    expect_iter
+      [1, 2, 3, 4, 5] | while item, acc=5:
+        [acc - item > 0, acc - 1]
+      to_equal
+        [1, 2]
+
+
+
+describe _until_, fn:
+  it 'keeps items until condition is true', fn:
+    expect_iter
+      [1, 2, 3, 4, 5] | until item:
+        item == 5
+      to_equal
+        [1, 2, 3, 4, 5]
+
+  it 'keeps all', fn:
+    expect_iter
+      [1, 2, 3, 4, 5] | until item:
+        item == 0
+      to_equal
+        [1, 2, 3, 4, 5]
+
+  it 'keeps items with accu', fn:
+    expect_iter
+      [1, 2, 3, 4, 5] | until item, acc=5:
+        [acc - item == 0, acc - 1]
+      to_equal
+        [1, 2, 3]
+
+
+
+describe _fold_, fn:
+  it 'folds items', fn:
+    expect
+      '123' | fold item, prev='':
+        '${item}${prev}'
+      to_equal
+        '321'
+
+
+  it 'folds items with accu', fn:
+    expect
+      'abc' | fold item, prev='', acc=0:
+        ['${prev},${item}${acc}', acc + 1]
+      to_equal
+        ',a0,b1,c2'
+
+
+
+describe _unfold_, fn:
+  it 'creates items from previous', fn:
+    expect_iter
+      pipe 0:
+        unfold prev:
+          prev + 1
+        while item:
+          item < 5
+      to_equal
+        [1, 2, 3, 4]
+
+  it 'creates items with accu', fn:
+    expect_iter
+      pipe 0:
+        unfold prev, accu=1:
+          [prev + accu, accu * 2]
+        while item:
+          item < 20
+      to_equal
+        [1, 3, 7, 15]
+
+
+  it 'creates items with spread', fn:
+    expect_iter
+      pipe:
+        unfold:
+          ...[1, 2, 3]
+
+        until item, seen=false:
+          [item == 2 and seen, seen or item == 2]
+
+      to_equal
+        [1, 2, 3, 1, 2]
+
+    [foo, bar, spam, shrub] = [1, 2, 3] | unfold items: ...items
+
+    expect_iter
+      [foo, bar, spam, shrub]
+      to_equal
+        [1, 2, 3, 1]
+
+
+
+describe _zip_, fn:
+  it 'zips iterables into one', fn:
+    count = unfold prev=0:
+      prev + 1
+
+    items = _zip_ 'abc', count 0
+
+    expect_iter
+      items
+      to_equal list:
+        ['a', 1]
+        ['b', 2]
+        ['c', 3]
+
+    expect_iter
+      items
+      to_equal list:
+        ['a', 1]
+        ['b', 2]
+        ['c', 3]
+
+
+
+describe _reverse_, fn:
+  it 'reverses iteralbe', fn:
+    items = [1, 2, 3, 4, 5]
+    expect_iter
+      _reverse_ items
+      to_equal
+        [5, 4, 3, 2, 1]
+
+    expect_iter
+      items
+      to_equal
+        [1, 2, 3, 4, 5]
+
+
+
+describe _sort_, fn:
+  it 'sorts', fn:
+    decending = fn a, b:
+      match  a:
+        b: 0
+        ? < b: 1
+        else: -1
+
+    expect_iter
+      [1, 3, 2, 8, 4] | _sort_ _
+      to_equal
+        [1, 2, 3, 4, 8]
+
+    expect_iter
+      [1, 3, 2, 8, 4] | _sort_ decending
+      to_equal
+        [8, 4, 3, 2, 1]
+
+
+
+describe _len_, fn:
+  it 'gets lengths', fn:
+    expect
+      _len_ []
+      to_equal 0
+
+    expect
+      _len_ [1, 2, 3] | filter item: item > 2
+      to_equal 1
+
+    expect
+      _len_ 'foo'
+      to_equal 3
+
+    expect
+      _len_ {foo: 'bar'}
+      to_equal 1
+
+    [, it] = _next_ _iter_ []
+    expect
+      _len_ it
+      to_equal 0
+
+
+  it 'gets lengths for JS native', fn:
+    expect
+      _len_ new Set, [1, 2, 3]
+      to_equal 3
+
+    expect
+      _len_ new Map, [['foo', 'bar']]
+      to_equal 1
+
+    expect
+      _len_ js_iter [1, 2, 3]
+      to_equal 3
+
+
+
+describe _is_empty_, fn:
+  it 'checks if empty', fn:
+    expect
+      _is_empty_ []
+      to_equal true
+
+    expect
+      _is_empty_ 0 | unfold: 1234
+      to_equal false
+
+    expect
+      _is_empty_ 'foo'
+      to_equal false
+
+    expect
+      _is_empty_ {foo: 'bar'}
+      to_equal false
+
+    [, it] = _next_ _iter_ []
+    expect
+      _is_empty_ it
+      to_equal true
+
+
+  it 'checks JS native', fn:
+    expect
+      _is_empty_ new Set, [1, 2, 3]
+      to_equal false
+
+    expect
+      _is_empty_ new Map, [['foo', 'bar']]
+      to_equal false
+
+    expect
+      _is_empty_ js_iter [1, 2, 3]
+      to_equal false
+
+
+
+describe _iter_ , fn:
+  it 'gets first item and tail iterator', fn:
+    [head, tail] = _next_ _iter_ [1, 2, 3]
+
+    expect
+      head
+      to_equal 1
+
+    expect_iter
+      tail
+      to_equal [2, 3]
+
+
+  it 'gets empty tail', fn:
+    [, tail] = _next_ _iter_ []
+    expect_iter
+      tail
+      to_equal []
+
+
+
+describe 'other iterables', fn:
+  it 'returns empty for non-interables', fn:
+    expect_iter
+      1234 | map item: item
+      to_equal []
+
+    expect_iter
+      null | map item: item
+      to_equal []
+
+    expect_iter
+      undefined | map item: item
+      to_equal []
+
+
+  it 'returns key value pairs for records', fn:
+    expect_iter
+      {foo: 'bar', ni: 42} | map item: item
+      to_equal seq:
+        ['foo', 'bar']
+        ['ni', 42]
+
+
+  it 'iterates over JS native iterables', fn:
+    expect_iter
+      pipe new Set, [1, 2, 3]:
+        map item: item
+      to_equal
+        [1, 2, 3]
+
+    expect_iter
+      pipe new Map, [['foo', 12], ['bar', 42]]:
+        map item: item
+      to_equal
+        [['foo', 12], ['bar', 42]]
+
+
+
+describe 'shared accu', fn:
+  it 'shares accus across iterators', fn:
+    expect
+      pipe [1, 2, 3]:
+        map item, ,ctx='.':
+          [item + 1, ,'${ctx}+']
+
+        map item, ,ctx:
+          [item * 2, ,'${ctx}~']
+
+        map item, , ctx:
+          ['i: ${item} c: ${ctx}-', , '${ctx}-']
+
+        [...?]
+
+      to_equal
+        ['i: 4 c: .+~-', 'i: 6 c: .+~-+~-', 'i: 8 c: .+~-+~-+~-']
+
+
+  it 'composes with shared accu pass throughs', fn:
+    add_stage = fn stage: map item, , ctx:
+      [item, , '${ctx}${stage}']
+
+    with_ctx = map item, , ctx:
+      ['i: ${item} c: ${ctx}', , ctx]
+
+    set_ctx = fn ctx: map item, , acc=ctx:
+      [item, , acc]
+
+    expect
+      pipe [1, 2, 3]:
+        set_ctx '.'
+        add_stage '+'
+        add_stage '~'
+        add_stage '-'
+        map item: item * 2
+        with_ctx
+        [...?]
+
+      to_equal
+        ['i: 2 c: .+~-', 'i: 4 c: .+~-+~-', 'i: 6 c: .+~-+~-+~-']
+
+
+
+describe _join_, fn:
+  it 'joins items', fn:
+    expect
+      pipe 'abcd':
+        map char: '_${char}_'
+        _join_ ','
+      to_equal
+        '_a_,_b_,_c_,_d_'
+
+
+
+describe _in_, fn:
+  it 'checks items in array', fn:
+    expect
+      'foo' in ['bar', 'spam', 'ham', 'ni', 'foo']
+      to_equal
+        true
+
+
+  it 'checks items in string', fn:
+    expect
+      'foo' in '_foo_'
+      to_equal
+        true
+
+
+  it 'checks in iterables', fn:
+    expect
+      2 in [1, 2, 3] | filter item: item % 2 == 0
+      to_equal
+        true
+
+    expect
+      1 in [1, 2, 3] | filter item: item % 2 == 0
+      to_equal
+        false
+
+    expect
+      1 in [1, 2, 3] | filter item: item > 3
+      to_equal
+        false
+
+
+  it 'checks empty iter', fn:
+    [, it] = _next_ _iter_ []
+    expect
+      2 in it
+      to_equal
+        false
+
+
+  it 'checks record keys', fn:
+    expect
+      'foo' in {foo: 'bar'}
+      to_equal
+        true
+
+    expect
+      'foo' in new Map, [['foo', 'bar']]
+      to_equal
+        true
+
+
+  it 'checks JS native objects', fn:
+    expect
+      1 in new Set, [1, 2, 3]
+      to_equal
+        true
+
+    expect
+      'foo' in new Map, [['foo', 'bar']]
+      to_equal
+        true
+
+    expect
+      1 in js_iter [1, 2, 3]
+      to_equal
+        true
+
+    expect
+      4 in js_iter [1, 2, 3]
+      to_equal
+        false
+
+    expect
+      'foo' in null
+      to_equal
+        false
+
+    expect
+      'foo' in undefined
+      to_equal
+        false

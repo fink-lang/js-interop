@@ -30,7 +30,7 @@ export default {
 
   collectCoverage: true,
   collectCoverageFrom: [
-    '<rootDir>/src/**/*.fnk'
+    '<rootDir>/src/**/*.js'
   ],
   coveragePathIgnorePatterns: [
     '/node_modules/',
