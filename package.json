@@ -32,7 +32,8 @@
     "build:cjs": "babel --config-file ./babel.build-cjs.config.js --out-dir build/pkg/cjs ./src/*.js",
     "build:pkg-cjs": "cp ./package-cjs.json build/pkg/cjs/package.json",
     "build:files": "cp ./package.json ./README.md ./LICENSE ./build/pkg/",
-    "test": "run jest",
+    "test": "run lint jest",
+    "lint": "eslint ./src",
     "jest": "jest --verbose --runInBand --no-cache ",
     "cd": "run clean test build release",
     "release": "semantic-release"
@@ -46,6 +47,7 @@
     "babel-jest": "^26.5.2",
     "commitizen": "^4.0.5",
     "cz-conventional-changelog": "^3.1.0",
+    "eslint": "^7.13.0",
     "jest-cli": "^26.5.3",
     "npx-run": "^2.1.2",
     "semantic-release": "^17.2.1"

@@ -79,6 +79,33 @@ describe _map_, fn:
         ['1', '1', '2', '2', '3', '3']
 
 
+  it 'maps items with shared accu', fn:
+    expect_iter
+      pipe [1, 2, 3]:
+        map item, ,ctx='.':
+          [item + 1, , '${ctx}~']
+
+        map item, , ctx:
+          ['i: ${item} c: ${ctx}-', , '${ctx}-']
+
+      to_equal
+        ['i: 2 c: .~-', 'i: 3 c: .~-~-', 'i: 4 c: .~-~-~-']
+
+
+  it 'maps items with shared accu async', fn:
+    expect_iter_a
+      pipe [1, 2, 3]:
+        map await item, ,ctx='.':
+          [item + 1, , await '${ctx}~']
+
+        map await item, , ctx:
+          ['i: ${item} c: ${ctx}-', , await '${ctx}-']
+
+
+      to_equal
+        ['i: 2 c: .~-', 'i: 3 c: .~-~-', 'i: 4 c: .~-~-~-']
+
+
 
 
 describe _filter_, fn:
@@ -112,6 +139,32 @@ describe _filter_, fn:
         [0 == (item * cntr) % 2, cntr + 1]
       to_equal
         [2, 4]
+
+
+  it 'filters items with shared accu', fn:
+    expect_iter
+      pipe [0, 1, 2, 3, 4]:
+        filter item, , ctx='.':
+          [item % 2 == 0, , '${ctx}~']
+
+        map item, , ctx:
+          ['i: ${item} c: ${ctx}', ,'${ctx}-']
+
+      to_equal
+        ['i: 0 c: .~', 'i: 2 c: .~-~~', 'i: 4 c: .~-~~-~~']
+
+
+  it 'filters items with shared accu', fn:
+    expect_iter_a
+      pipe [0, 1, 2, 3, 4]:
+        filter await item, , ctx='.':
+          [item % 2 == 0, , '${ctx}~']
+
+        map await item, , ctx:
+          ['i: ${item} c: ${ctx}', , '${ctx}-']
+
+      to_equal
+        ['i: 0 c: .~', 'i: 2 c: .~-~~', 'i: 4 c: .~-~~-~~']
 
 
 
@@ -164,6 +217,32 @@ describe _while_, fn:
         [1, 2]
 
 
+  it 'keeps items with shared accu', fn:
+    expect_iter
+      pipe [1, 2, 3, 4]:
+        while item, , ctx='.':
+          [item < 4, , '${ctx}~']
+
+        map item, , ctx:
+          ['i: ${item} c: ${ctx}', ,'${ctx}-']
+
+      to_equal
+        ['i: 1 c: .~', 'i: 2 c: .~-~', 'i: 3 c: .~-~-~']
+
+
+  it 'keeps items with shared accu', fn:
+    expect_iter_a
+      pipe [1, 2, 3, 4]:
+        while await item, , ctx='.':
+          [item < 4, , await '${ctx}~']
+
+        map await item, , ctx:
+          ['i: ${item} c: ${ctx}', ,'${ctx}-']
+
+      to_equal
+        ['i: 1 c: .~', 'i: 2 c: .~-~', 'i: 3 c: .~-~-~']
+
+
 
 describe _until_, fn:
   it 'keeps items until condition is true', fn:
@@ -212,6 +291,32 @@ it 'keeps items until condition is true async', fn:
         [acc - item == 0, await acc - 1]
       to_equal
         [1, 2, 3]
+
+
+  it 'keeps items with shared accu', fn:
+    expect_iter
+      pipe [1, 2, 3, 4]:
+        until item, , ctx='.':
+          [item == 3, , '${ctx}~']
+
+        map item, , ctx:
+          ['i: ${item} c: ${ctx}', ,'${ctx}-']
+
+      to_equal
+        ['i: 1 c: .~', 'i: 2 c: .~-~', 'i: 3 c: .~-~-~']
+
+
+  it 'keeps items with shared accu', fn:
+    expect_iter_a
+      pipe [1, 2, 3, 4]:
+        until await item, , ctx='.':
+          [item == 3, , await '${ctx}~']
+
+        map await item, , ctx:
+          ['i: ${item} c: ${ctx}', ,'${ctx}-']
+
+      to_equal
+        ['i: 1 c: .~', 'i: 2 c: .~-~', 'i: 3 c: .~-~-~']
 
 
 
@@ -267,6 +372,7 @@ describe _unfold_, fn:
       to_equal
         [1, 2, 3, 4]
 
+
   it 'creates items with accu', fn:
     expect_iter
       pipe 0:
@@ -276,6 +382,36 @@ describe _unfold_, fn:
           item < 20
       to_equal
         [1, 3, 7, 15]
+
+
+  it 'creates items with shared accu', fn:
+    expect_iter
+      pipe 0:
+        unfold prev, , ctx='.':
+          [prev+1, , '${ctx}~']
+
+        while item: item < 4
+
+        map item, , ctx='.':
+          ['${item}${ctx}', , '${ctx}-']
+
+      to_equal
+        ['1.~', '2.~-~', '3.~-~-~']
+
+
+  it 'creates items with shared accu async', fn:
+    expect_iter_a
+      pipe 0:
+        unfold await prev, , ctx='.':
+          [prev+1, , await '${ctx}~']
+
+        while await item: item < 4
+
+        map await item, , ctx='.':
+          ['${item}${ctx}', , '${ctx}-']
+
+      to_equal
+        ['1.~', '2.~-~', '3.~-~-~']
 
 
   it 'creates items with spread', fn:
@@ -307,6 +443,7 @@ describe _unfold_, fn:
           item < 5
       to_equal
         [1, 2, 3, 4]
+
 
   it 'creates items with accu async', fn:
     expect_iter_a
@@ -552,23 +689,6 @@ describe 'JS async iterable', fn:
 
 
 describe 'shared accu', fn:
-  it 'shares accus across iterators', fn:
-    expect
-      pipe [1, 2, 3]:
-        map item, ,ctx='.':
-          [item + 1, ,'${ctx}+']
-
-        map item, ,ctx:
-          [item * 2, ,'${ctx}~']
-
-        map item, , ctx:
-          ['i: ${item} c: ${ctx}-', , '${ctx}-']
-
-        [...?]
-
-      to_equal
-        ['i: 4 c: .+~-', 'i: 6 c: .+~-+~-', 'i: 8 c: .+~-+~-+~-']
-
 
   it 'composes with shared accu pass throughs', fn:
     add_stage = fn stage: map item, , ctx:

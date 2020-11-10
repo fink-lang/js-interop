@@ -1,6 +1,7 @@
 export const ˆnew = (cls, ...args)=> Reflect.construct(cls, args);
 
 
+
 export const apply = /*#__PURE__*/ (()=> Reflect.apply)();
 export const has = /*#__PURE__*/ (()=> Reflect.has)();
 export const get = /*#__PURE__*/ (()=> Reflect.get)();
@@ -16,6 +17,6 @@ export const prevent_extensions = /*#__PURE__*/ (()=> Reflect.preventExtensions)
 
 export const set_props = /*#__PURE__*/ (()=> Object.assign)();
 
-export const get_type = /*#__PURE__*/ (obj)=> typeof obj;
+export const get_type = /*#__PURE__ */ (obj)=> typeof obj;
 
 export const is_instance = (obj, cls)=> obj instanceof cls;
