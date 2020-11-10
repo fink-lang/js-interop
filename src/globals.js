@@ -1,3 +1,4 @@
+/* eslint-disable no-shadow-restricted-names */
 const Object_ = Object;
 export {Object_ as Object};
 

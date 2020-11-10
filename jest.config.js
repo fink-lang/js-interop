@@ -17,9 +17,7 @@ export default {
 
   modulePathIgnorePatterns: ['<rootDir>/build/'],
 
-  testMatch: [
-    '<rootDir>/**/*.test.fnk'
-  ],
+  testMatch: ['<rootDir>/**/*.test.fnk'],
   testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/build/'],
   watchPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/build/'],
 
@@ -29,9 +27,7 @@ export default {
   resetMocks: false,
 
   collectCoverage: true,
-  collectCoverageFrom: [
-    '<rootDir>/src/**/*.js'
-  ],
+  collectCoverageFrom: ['<rootDir>/src/**/*.js'],
   coveragePathIgnorePatterns: [
     '/node_modules/',
     '<rootDir>/src/testing/'
