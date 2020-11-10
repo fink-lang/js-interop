@@ -360,6 +360,19 @@ describe _fold_, fn:
         ',a0,b1,c2'
 
 
+  it 'folds items with shared accu', fn:
+    expect
+      'abc' | fold item, prev='.', , cntr=0:
+        ['${prev}${item}', ,cntr + 1]
+      to_equal
+        ['.abc', 3]
+
+    expect
+      '' | fold item, prev='.', , cntr=0:
+        ['${prev}${item}', ,cntr + 1]
+      to_equal
+        ['.', 0]
+
 
 describe _unfold_, fn:
   it 'creates items from previous', fn:
