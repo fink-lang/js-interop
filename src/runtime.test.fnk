@@ -374,6 +374,37 @@ describe _fold_, fn:
         ['.', 0]
 
 
+  it 'folds items with shared accu async', fn:
+    expect
+      await 'abc' | fold  await item, prev='.', , cntr=0:
+        ['${prev}${item}', ,cntr + 1]
+      to_equal
+        ['.abc', 3]
+
+    expect
+      await '' | fold await item, prev='.', , cntr=0:
+        ['${prev}${item}', ,cntr + 1]
+      to_equal
+        ['.', 0]
+
+
+  it 'returns last ctx', fn:
+    expect
+      pipe 'abcde' :
+        map item, ,ctx:
+          [item, , '${ctx},1${item}']
+
+        filter , keep=true:
+          [keep, false]
+
+        fold item, prev='.', , ctx='.':
+          ['${prev}${item}', , '${ctx},2${item}']
+
+      to_equal
+        ['.a', '.,1a,2a,1b,1c,1d,1e']
+
+
+
 describe _unfold_, fn:
   it 'creates items from previous', fn:
     expect_iter

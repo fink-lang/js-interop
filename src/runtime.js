@@ -702,7 +702,7 @@ export const fold_sync = (reducer, num_args, init_result, init_accu, init_accu2)
 
     if (is_done(it)) {
       if (return_with_accu2) {
-        return [result, accu2];
+        return [result, step_accu];
       }
       return result;
     }
@@ -718,6 +718,7 @@ export const fold_sync = (reducer, num_args, init_result, init_accu, init_accu2)
 
 export const fold_async = (reducer, num_args, init_result, init_accu, init_accu2)=> async (iterable)=> {
   const use_accu = num_args > 2;
+  const return_with_accu2 = num_args > 3;
   let it = _iter_(iterable);
   let result = init_result;
   let accu = init_accu;
@@ -727,6 +728,9 @@ export const fold_async = (reducer, num_args, init_result, init_accu, init_accu2
   while (true) {
     [item, it, step_accu=accu2] = await _next_(it, accu2);
     if (is_done(it)) {
+      if (return_with_accu2) {
+        return [result, step_accu];
+      }
       return result;
     }
     if (use_accu) {
