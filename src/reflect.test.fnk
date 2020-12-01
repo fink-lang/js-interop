@@ -38,7 +38,7 @@ describe 'reflect', fn:
   it 'defines prop', fn:
     foo = {}
 
-    define_property foo, 'foo', dict:
+    define_property foo, 'foo', rec:
       value: 'bar',
       configurable: true
       enumerable: true
@@ -54,7 +54,7 @@ describe 'reflect', fn:
 
     expect
       get_own_property_descriptor foo, 'foo'
-      to_equal dict:
+      to_equal rec:
         configurable: true
         enumerable: true
         writable: true
