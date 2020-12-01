@@ -432,7 +432,7 @@ describe _unfold_, fn:
     expect_iter
       pipe 0:
         unfold prev, , ctx='.':
-          [prev+1, , '${ctx}~']
+          [prev + 1, , '${ctx}~']
 
         while item: item < 4
 
@@ -447,7 +447,7 @@ describe _unfold_, fn:
     expect_iter_a
       pipe 0:
         unfold await prev, , ctx='.':
-          [prev+1, , await '${ctx}~']
+          [prev + 1, , await '${ctx}~']
 
         while await item: item < 4
 
@@ -696,7 +696,7 @@ describe 'other iterables', fn:
   it 'returns key value pairs for records', fn:
     expect_iter
       {foo: 'bar', ni: 42} | map item: item
-      to_equal seq:
+      to_equal list:
         ['foo', 'bar']
         ['ni', 42]
 
