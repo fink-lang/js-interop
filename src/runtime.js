@@ -39,7 +39,7 @@ class IndexedIterator extends Iterator {
     if(idx < items.length) {
       return [items[idx], new IndexedIterator(items, idx + 1), accu2];
     }
-    return [undefined, emtpy_iter, accu2];
+    return [undefined, _empty_iter_, accu2];
   }
 }
 
@@ -56,7 +56,7 @@ class JSIterableIterator extends Iterator {
     // TODO use send with accu2?
     const {value, done} = iter.next();
     if (done) {
-      return [undefined, emtpy_iter, accu2];
+      return [undefined, _empty_iter_, accu2];
     }
 
     // TODO: remember next iterator's value and use it if next() called
@@ -79,7 +79,7 @@ class FuncIterator extends Iterator {
   }
 }
 
-const iterator = (next_fn, state)=> new FuncIterator(next_fn, state);
+export const _iterable_ = (next_fn, state)=> new FuncIterator(next_fn, state);
 
 
 
@@ -98,11 +98,11 @@ class EmptyIterator extends Iterator {
   }
 }
 
-const emtpy_iter = new EmptyIterator();
+
+export const _empty_iter_ = new EmptyIterator();
 
 
-const is_done = (it)=> it === emtpy_iter || it.done === true;
-
+export const _is_done_ = (it)=> it === _empty_iter_ || it.done === true;
 
 
 export const _next_ = (it, accu)=> it.next(accu);
@@ -110,7 +110,7 @@ export const _next_ = (it, accu)=> it.next(accu);
 
 
 export const _is_empty_ = (iterable)=> {
-  if (iterable === emtpy_iter || iterable === null || iterable === undefined) {
+  if (iterable === _empty_iter_ || iterable === null || iterable === undefined) {
     return true;
   }
 
@@ -123,13 +123,13 @@ export const _is_empty_ = (iterable)=> {
   }
 
   const [, it] = _next_(_iter_(iterable));
-  return is_done(it);
+  return _is_done_(it);
 };
 
 
 
 export const _len_ = (iterable)=> {
-  if (iterable === emtpy_iter || iterable === null || iterable === undefined) {
+  if (iterable === _empty_iter_ || iterable === null || iterable === undefined) {
     return 0;
   }
 
@@ -155,7 +155,7 @@ export const _len_ = (iterable)=> {
 
   while (true) {
     [, it] = _next_(it);
-    if (is_done(it)) {
+    if (_is_done_(it)) {
       return count;
     }
     count += 1;
@@ -165,7 +165,7 @@ export const _len_ = (iterable)=> {
 
 
 export const _in_ = (item, obj)=> {
-  if (obj === emtpy_iter || obj === null || obj === undefined) {
+  if (obj === _empty_iter_ || obj === null || obj === undefined) {
     return false;
   }
 
@@ -182,7 +182,7 @@ export const _in_ = (item, obj)=> {
     let value;
     while (true) {
       [value, it] = _next_(it);
-      if (is_done(it)) {
+      if (_is_done_(it)) {
         return false;
       } else if (value === item) {
         return true;
@@ -207,7 +207,7 @@ export const _in_ = (item, obj)=> {
 
 export const _iter_ = (iterable)=> {
   if (iterable === null || iterable === undefined) {
-    emtpy_iter;
+    _empty_iter_;
   } else if (iterable instanceof Iterator) {
     return iterable;
   } else if (iterable instanceof Array || typeof iterable === 'string') {
@@ -218,7 +218,7 @@ export const _iter_ = (iterable)=> {
     return new IndexedIterator(Object.entries(iterable), 0);
   }
   // TODO: make numbers iterable?
-  return emtpy_iter;
+  return _empty_iter_;
 }
 
 
@@ -251,7 +251,7 @@ class MappingIterator extends SpreadableIterator {
 
     const [item, next_it, step_accu=next_accu2] = _next_(step_it, next_accu2);
 
-    if (is_done(next_it)) {
+    if (_is_done_(next_it)) {
       return [undefined, next_it, step_accu];
     }
 
@@ -295,7 +295,7 @@ class AsyncMappingIterator extends SpreadableIterator {
 
     const [item, next_it, step_accu=next_accu2] = await _next_(step_it, next_accu2);
 
-    if (is_done(next_it)) {
+    if (_is_done_(next_it)) {
       return [undefined, next_it, step_accu];
     }
 
@@ -357,7 +357,7 @@ class FilteringIterator extends LoopIterator {
 
     while(true) {
       const [item, next_it, step_accu=next_accu2] = _next_(setp_it, next_accu2);
-      if (is_done(next_it)) {
+      if (_is_done_(next_it)) {
         return [undefined, next_it, step_accu];
       }
       setp_it = next_it;
@@ -396,7 +396,7 @@ class AsyncFilteringIterator extends LoopIterator {
 
     while(true) {
       const [item, next_it, step_accu=next_accu2] = await _next_(setp_it, next_accu2);
-      if (is_done(next_it)) {
+      if (_is_done_(next_it)) {
         return [undefined, next_it, step_accu];
       }
       setp_it = next_it;
@@ -443,7 +443,7 @@ class WhileIterator extends LoopIterator {
 
     const [item, next_it, step_accu=next_accu2] = _next_(it, next_accu2);
 
-    if (is_done(next_it)) {
+    if (_is_done_(next_it)) {
       return [undefined, next_it, step_accu];
     }
 
@@ -461,7 +461,7 @@ class WhileIterator extends LoopIterator {
         next_accu2
       ];
     }
-    return [undefined, emtpy_iter, next_accu2];
+    return [undefined, _empty_iter_, next_accu2];
   }
 }
 
@@ -480,7 +480,7 @@ class AsyncWhileIterator extends LoopIterator {
 
     const [item, next_it, step_accu=next_accu2] = await _next_(it, next_accu2);
 
-    if (is_done(next_it)) {
+    if (_is_done_(next_it)) {
       return [undefined, next_it, step_accu];
     }
 
@@ -498,7 +498,7 @@ class AsyncWhileIterator extends LoopIterator {
         next_accu2
       ];
     }
-    return [undefined, emtpy_iter, next_accu2];
+    return [undefined, _empty_iter_, next_accu2];
   }
 }
 
@@ -526,7 +526,7 @@ class UntilIterator extends LoopIterator {
 
     const [item, next_it, step_accu=next_accu2] = _next_(it, next_accu2);
 
-    if (is_done(next_it)) {
+    if (_is_done_(next_it)) {
       return [undefined, next_it, step_accu];
     }
 
@@ -540,7 +540,7 @@ class UntilIterator extends LoopIterator {
     if (value === true) {
       return [
         item,
-        iterator((_, acc2)=> [undefined, emtpy_iter, acc2]),
+        _iterable_((_, acc2)=> [undefined, _empty_iter_, acc2]),
         next_accu2
       ];
     }
@@ -568,7 +568,7 @@ class AsyncUntilIterator extends LoopIterator {
 
     const [item, next_it, step_accu=next_accu2] = await _next_(it, next_accu2);
 
-    if (is_done(next_it)) {
+    if (_is_done_(next_it)) {
       return [undefined, next_it, step_accu];
     }
 
@@ -582,7 +582,7 @@ class AsyncUntilIterator extends LoopIterator {
     if (value === true) {
       return [
         item,
-        iterator((_, acc2)=> [undefined, emtpy_iter, acc2]),
+        _iterable_((_, acc2)=> [undefined, _empty_iter_, acc2]),
         next_accu2
       ];
     }
@@ -700,7 +700,7 @@ export const fold_sync = (reducer, num_args, init_result, init_accu, init_accu2)
   while (true) {
     [item, it, step_accu=accu2] = _next_(it, accu2);
 
-    if (is_done(it)) {
+    if (_is_done_(it)) {
       if (return_with_accu2) {
         return [result, step_accu];
       }
@@ -727,7 +727,7 @@ export const fold_async = (reducer, num_args, init_result, init_accu, init_accu2
 
   while (true) {
     [item, it, step_accu=accu2] = await _next_(it, accu2);
-    if (is_done(it)) {
+    if (_is_done_(it)) {
       if (return_with_accu2) {
         return [result, step_accu];
       }
@@ -766,7 +766,7 @@ class ChainIterator extends Iterator {
       [it, ...iters] = iters;
       [item, it, step_accu2=next_accu2] = _next_(it, next_accu2);
 
-      if (is_done(it)) {
+      if (_is_done_(it)) {
         if (iters.length === 0) {
           return [undefined, it, step_accu2];
         }
@@ -793,7 +793,7 @@ class AsyncChainIterator extends Iterator {
       [it, ...iters] = iters;
       [item, it, step_accu2=next_accu2] = await _next_(it, next_accu2);
 
-      if (is_done(it)) {
+      if (_is_done_(it)) {
         if (iters.length === 0) {
           return [undefined, it, step_accu2];
         }
@@ -824,8 +824,8 @@ class ZipIterator extends Iterator {
 
     for (let i = 0; i < len; i++) {
       const [val, next_it, next_acc=step_accu] = _next_(iterables[i], step_accu);
-      if (is_done(next_it)) {
-        return [[], emtpy_iter, next_acc];
+      if (_is_done_(next_it)) {
+        return [[], _empty_iter_, next_acc];
       }
       values[i] = val;
       iters[i] = next_it;
