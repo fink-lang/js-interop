@@ -1,0 +1,31 @@
+{describe, it, expect, to_equal, to_throw} = import '@fink/jest/test.fnk'
+
+{try_catch, throw_err, error} = import './errors.js'
+{undefined} = import './nullish.js'
+
+
+
+describe try_catch, fn:
+  it 'returns err==false', fn:
+    expect
+      try_catch fn:
+        1234
+      to_equal
+        [false, 1234]
+
+
+  it 'returns error', fn:
+    expect
+      try_catch fn:
+        throw_err error 'foobar'
+      to_equal
+        [(error 'foobar'), undefined]
+
+
+
+describe throw_err, fn:
+  it 'returns error', fn:
+    expect
+      fn: throw_err error 'foobar'
+      to_throw
+        error 'foobar'
