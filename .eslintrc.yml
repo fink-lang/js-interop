@@ -113,7 +113,7 @@ rules:
   no-alert: error
   no-array-constructor: error
   no-await-in-loop: 'off'
-  no-bitwise: error
+  no-bitwise: off
   no-buffer-constructor: error
   no-caller: error
   no-catch-shadow: error
@@ -221,7 +221,7 @@ rules:
   object-curly-spacing:
     - error
     - never
-  object-property-newline: error
+  object-property-newline: off
   object-shorthand: error
   one-var: 'off'
   one-var-declaration-per-line:
