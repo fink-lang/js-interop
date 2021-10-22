@@ -1,0 +1,345 @@
+
+{describe, it, expect, to_equal} = import '@fink/jest/test.fnk'
+{randomBytes} = import 'crypto'
+
+{empty, set, get, del, update} = import './hamt.js'
+
+
+set_vals = fn [key=false, ...keys], m=empty:
+  match key:
+    false: m
+    else: set_vals keys, set m, key, '${key}-val'
+
+
+
+update_vals = fn [key=false, ...keys], m=empty:
+  match key:
+    false: m
+    else: update_vals keys, update m, key, fn val='ø': '${key}-${val}'
+
+
+
+del_keys = fn [key=false, ...keys], m=empty:
+  match key:
+    false: m
+    else: del_keys keys, del m, key
+
+
+
+describe get, fn:
+  it 'handles missing from empty', fn:
+    expect
+      pipe empty:
+        get ?, 'foo'
+        fn r=false: r
+      to_equal false
+
+
+  it 'handles missing from leaf node', fn:
+    h = set_vals ['foo']
+
+    expect
+      pipe h:
+        get ?, 'bar'
+        fn r=false: r
+      to_equal false
+
+
+  it 'handles missing from array node', fn:
+    h = set_vals 'abcdfghijklmnopqr'
+
+    expect
+      pipe h:
+        get ?, 's'
+        fn r=false: r
+      to_equal false
+
+
+  it 'handles missing from collisions', fn:
+    h = set_vals ['Sus', 'TVs', 'TWT']
+
+    expect
+      pipe h:
+        get ?, 'foo'
+        fn r=false: r
+      to_equal false
+
+
+
+describe set, fn:
+  it 'sets on empty', fn:
+    expect
+      pipe empty:
+        set ?, 'foo', 'bar'
+        get ?, 'foo'
+      to_equal 'bar'
+
+
+  it 'updates existing (leaf node)', fn:
+    expect
+      pipe empty:
+        set ?, 'foo', 'bar'
+        set ?, 'spam', 'ham'
+        fn map: list:
+          get map, 'foo'
+          get map, 'spam'
+
+      to_equal ['bar', 'ham']
+
+
+  it 'ignores duplicate (leaf node)', fn:
+    expect
+      pipe empty:
+        set ?, 'foo', 'bar'
+        set ?, 'bar', 'spam'
+        set ?, 'foo', 'bar'
+        ?.size
+      to_equal 2
+
+
+  it 'overwites existing entry (leaf node)', fn:
+    h1 = set empty, 'foo', 'bar'
+    h2 = set h1, 'foo', 'spam'
+
+    expect
+      get h1, 'foo'
+      to_equal 'bar'
+
+    expect
+      get h2, 'foo'
+      to_equal 'spam'
+
+
+  it 'sets values from unordered keys', fn:
+    [...keys] = pipe 1234:
+      randomBytes ?
+      ?.toString 'utf-8'
+
+    m = set_vals keys
+
+    keys.forEach fn key:
+      expect
+        get m, key
+        to_equal '${key}-val'
+
+
+  it 'sets values from ordered keys', fn:
+    [...keys] = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+
+    m = set_vals keys
+
+    keys.forEach fn key:
+      expect
+        get m, key
+        to_equal '${key}-val'
+
+
+  it 'handles hash collisions', fn:
+    h = set_vals list:
+      ...'abcdefghijklmnopqrstuvwxyz'
+      # each line has keys with same hash
+      'Esc', 'FUD'
+      'hypoplankton', 'unheavenly'
+      'snitz', 'unprecludible'
+      'Ollie', 'outwiled'
+      'enheaven', 'seminervous'
+      'saltcellar', 'terajoule'
+      'saltcellars', 'terajoules'
+      'Obs', 'PCs', 'PDT'
+      'Sus', 'TVs', 'TWT'
+
+    expect
+      pipe []:
+        [...?, get h, 'Esc']
+        [...?, get h, 'FUD']
+      to_equal ['Esc-val', 'FUD-val']
+
+
+  it 'ignores if key vals are the same', fn:
+    h1 = set_vals list:
+      'foo'
+      'bar'
+      # each line has keys with same hash
+      'Esc', 'FUD'
+      'hypoplankton', 'unheavenly'
+      'snitz', 'unprecludible'
+      'Ollie', 'outwiled'
+      'enheaven', 'seminervous'
+      'saltcellar', 'terajoule'
+      'saltcellars', 'terajoules'
+      'Obs', 'PCs', 'PDT'
+      'Sus', 'TVs', 'TWT'
+
+    h2 = set_vals ['foo', 'bar', 'FUD', 'TWT'], h1
+
+    expect
+      h1 == h2
+      to_equal true
+
+
+  it 'handles update with collisions', fn:
+    h1 = set_vals list:
+      # each line has keys with same hash
+      'Esc', 'FUD'
+      'hypoplankton', 'unheavenly'
+      'snitz', 'unprecludible'
+      'Ollie', 'outwiled'
+      'enheaven', 'seminervous'
+      'saltcellar', 'terajoule'
+      'saltcellars', 'terajoules'
+      'Obs', 'PCs', 'PDT'
+      'Sus', 'TVs', 'TWT'
+
+    h2 = pipe h1:
+      set ?, 'FUD', 'fud-new-val'
+
+    expect
+      get h2, 'FUD'
+      to_equal 'fud-new-val'
+
+
+
+describe del, fn:
+  it 'deletes non-existing', fn:
+    expect
+      pipe empty:
+        del ?, 'FUD'
+        ?.size
+      to_equal 0
+
+
+  it 'deletes existing', fn:
+    h = set_vals ['foo', 'bar']
+
+    expect
+      pipe h:
+        del ?, 'foo'
+        ?.size
+      to_equal 1
+
+
+  it 'deletes existing (collisions)', fn:
+    h = set_vals list:
+      # each line has keys with same hash
+      'Esc', 'FUD'
+      'hypoplankton', 'unheavenly'
+      'snitz', 'unprecludible'
+      'Ollie', 'outwiled'
+      'enheaven', 'seminervous'
+      'saltcellar', 'terajoule'
+      'saltcellars', 'terajoules'
+      'Obs', 'PCs', 'PDT'
+      'Sus', 'TVs', 'TWT'
+
+    expect
+      pipe h:
+        del ?, 'FUD'
+        del ?, 'Esc'
+        del ?, 'snitz'
+        get ?, 'Esc'
+        fn r=false: r
+      to_equal false
+
+
+  it 'ignores already deleted', fn:
+    h = set_vals ['foo', 'bar', 'spam']
+
+    h1 = pipe h:
+      del ?, 'foo'
+
+    expect
+      h1 == del h1, 'foo'
+      to_equal true
+
+
+  it 'ignores deleting collision', fn:
+    h = set_vals ['FUD']
+
+    h1 = pipe h:
+      del ?, 'Esc'
+
+    expect
+      h == h1
+      to_equal true
+
+
+  it 'handles collision list', fn:
+    h = set_vals list:
+      # each line has keys with same hash
+      'Esc', 'FUD'
+      'Obs', 'PCs', 'PDT'
+      'Sus', 'TVs', 'TWT'
+
+    h1 = pipe h:
+      del ?, 'TWT'
+      del ?, 'TVs'
+      del ?, 'Sus'
+      del ?, 'PDT'
+      del ?, 'PCs'
+      del ?, 'Obs'
+
+    expect
+      h1 == del h1, 'PDT'
+      to_equal true
+
+
+  it 'handles indexed node', fn:
+    h1 = set_vals 'nUp^hwWxSfHmglb_VZGoFQakjrBAyRDic]C[estJEqvMTNLKYdPuIO`X'
+    h2 = del_keys 'wmQRiKPYDgyLb[atjWJGqrpUvhS_dxIFfnBkVNlXA]sZO^o`HEeMuTcC', h1
+
+    expect
+      h2.size
+      to_equal 0
+
+
+  it 'ignores already deleted from collision', fn:
+    h = set_vals list:
+      # each line has keys with same hash
+      'Esc', 'FUD'
+      'hypoplankton', 'unheavenly'
+      'snitz', 'unprecludible'
+      'Ollie', 'outwiled'
+      'enheaven', 'seminervous'
+      'saltcellar', 'terajoule'
+      'saltcellars', 'terajoules'
+      'Obs', 'PCs', 'PDT'
+      'Sus', 'TVs', 'TWT'
+
+    h1 = pipe h:
+      del ?, 'PDT'
+
+    expect
+      h1 == del h1, 'PDT'
+      to_equal true
+
+
+
+describe update, fn:
+  it 'updates value in place', fn:
+    h = update_vals list:
+      # each line has keys with same hash
+      'Esc', 'FUD'
+      'hypoplankton', 'unheavenly'
+      'snitz', 'unprecludible'
+      'Ollie', 'outwiled'
+      'enheaven', 'seminervous'
+      'saltcellar', 'terajoule'
+      'saltcellars', 'terajoules'
+      'Obs', 'PCs', 'PDT'
+      'Sus', 'TVs', 'TWT'
+      'foo'
+
+    expect
+      pipe h:
+        update ?, 'foo', fn val: '${val}-2'
+        update ?, 'TVs', fn val: '${val}-2'
+
+        fn m: list:
+          get m, 'foo'
+          get m, 'TVs'
+
+      to_equal ['foo-ø-2', 'TVs-ø-2']
+
+
+
+
