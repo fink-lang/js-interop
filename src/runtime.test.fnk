@@ -247,26 +247,26 @@ describe _join_, fn:
 describe _in_, fn:
   it 'checks items in array', fn:
     expect
-      'foo' in ['bar', 'spam', 'ham', 'ni', 'foo']
+      _in_ 'foo', ['bar', 'spam', 'ham', 'ni', 'foo']
       to_equal
         true
 
 
   it 'checks items in string', fn:
     expect
-      'foo' in '_foo_'
+      _in_ 'foo', '_foo_'
       to_equal
         true
 
 
   it 'checks in iterables', fn:
     expect
-      2 in _iter_ [1, 2, 3]
+      _in_ 2, _iter_ [1, 2, 3]
       to_equal
         true
 
     expect
-      5 in _iter_ [1, 2, 3]
+      _in_ 5, _iter_ [1, 2, 3]
       to_equal
         false
 
@@ -274,50 +274,50 @@ describe _in_, fn:
   it 'checks empty iter', fn:
     [, it] = _next_ _iter_ []
     expect
-      2 in it
+      _in_ 2, it
       to_equal
         false
 
 
   it 'checks record keys', fn:
     expect
-      'foo' in {foo: 'bar'}
+      _in_ 'foo', {foo: 'bar'}
       to_equal
         true
 
     expect
-      'foo' in new Map, [['foo', 'bar']]
+      _in_ 'foo', new Map, [['foo', 'bar']]
       to_equal
         true
 
 
   it 'checks JS native objects', fn:
     expect
-      1 in new Set, [1, 2, 3]
+      _in_ 1, new Set, [1, 2, 3]
       to_equal
         true
 
     expect
-      'foo' in new Map, [['foo', 'bar']]
+      _in_ 'foo', new Map, [['foo', 'bar']]
       to_equal
         true
 
     expect
-      1 in js_iter [1, 2, 3]
+      _in_ 1, js_iter [1, 2, 3]
       to_equal
         true
 
     expect
-      4 in js_iter [1, 2, 3]
+      _in_ 4, js_iter [1, 2, 3]
       to_equal
         false
 
     expect
-      'foo' in null
+      _in_ 'foo', null
       to_equal
         false
 
     expect
-      'foo' in undefined
+      _in_ 'foo', undefined
       to_equal
         false
