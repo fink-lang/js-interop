@@ -21,7 +21,7 @@ const INDEX = 3;
 const ARRAY = 4;
 
 
-const is_del_op = (op)=> typeof op === 'undefined'
+const is_del_op = (op)=> typeof op === 'undefined';
 
 
 const pop_count = (x)=> {
@@ -189,7 +189,7 @@ const update_collision_list = (hash, list, op, key, size)=> {
 
     if (child.key === key) {
       if (is_del_op(op)) {
-        --size.value
+        --size.value;
         return array_del(list, idx);
       }
 
@@ -381,7 +381,7 @@ const modify_node = (node, shift, op, h, k, size)=> {
 
   } // else if (type === COLLISION) {
   return modify_collision_node(node, shift, op, h, k, size);
-}
+};
 
 
 const get_from_collision = (node, hash, key, fallback)=> {
@@ -418,7 +418,7 @@ export const get = (map, key, alt)=> {
         : alt;
 
     case COLLISION:
-      return get_from_collision(node, hash, key, alt)
+      return get_from_collision(node, hash, key, alt);
 
     case INDEX: {
       const frag = hash_fragment(shift, hash);
@@ -451,7 +451,7 @@ export const get = (map, key, alt)=> {
 
 
 export const update = (map, key, op)=> {
-  const hash = gen_hash(key)
+  const hash = gen_hash(key);
   const size = {value: map.size};
   const {root} = map;
 
@@ -461,7 +461,7 @@ export const update = (map, key, op)=> {
 
   return new_root === root
     ? map
-    : {root: new_root, size: size.value}
+    : {root: new_root, size: size.value};
 };
 
 
@@ -481,6 +481,6 @@ export const del = (map, key)=> (
 );
 
 
-export const empty = {root: undefined, size: 0}
+export const empty = {root: undefined, size: 0};
 
 
