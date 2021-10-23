@@ -1,7 +1,8 @@
 
 {describe, it, expect, to_equal} = import '@fink/jest/test.fnk'
-{randomBytes} = import 'crypto'
 
+{fold} = import '@fink/std-lib/iter.fnk'
+{randomBytes} = import 'crypto'
 {empty, set, get, del, update} = import './hamt.js'
 
 
@@ -111,24 +112,24 @@ describe set, fn:
 
 
   it 'sets values from unordered keys', fn:
-    [...keys] = pipe 1234:
+    keys = pipe 1234:
       randomBytes ?
       ?.toString 'utf-8'
+      [...?]
 
     m = set_vals keys
 
-    keys.forEach fn key:
+    keys | fold fn key:
       expect
         get m, key
         to_equal '${key}-val'
 
 
   it 'sets values from ordered keys', fn:
-    [...keys] = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-
+    keys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
     m = set_vals keys
 
-    keys.forEach fn key:
+    keys | fold fn key:
       expect
         get m, key
         to_equal '${key}-val'
