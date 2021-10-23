@@ -28,7 +28,7 @@
     "clean": "rimraf ./build",
     "build": "run build:*",
     "build:dir": "mkdir -p ./build/pkg",
-    "build:esm": "cp src/runtime.js src/globals.js src/nullish.js src/reflect.js src/this.js src/errors.js ./build/pkg/",
+    "build:esm": "babel --out-dir build/pkg/ ./src/*.js",
     "build:cjs": "babel --config-file ./babel.build-cjs.config.js --out-dir build/pkg/cjs ./src/*.js",
     "build:pkg-cjs": "cp ./package-cjs.json build/pkg/cjs/package.json",
     "build:files": "cp ./package.json ./README.md ./LICENSE ./build/pkg/",

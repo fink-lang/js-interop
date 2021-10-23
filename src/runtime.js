@@ -8,7 +8,7 @@ class Iterator {
         return;
       }
       yield value;
-      it = next_it
+      it = next_it;
     }
   }
 }
@@ -206,7 +206,7 @@ export const _iter_ = (iterable)=> {
   }
   // TODO: make numbers iterable?
   return _empty_iter_;
-}
+};
 
 
 
@@ -261,4 +261,3 @@ export const _join_ = (sep)=> (iterable)=> {
   // TODO: inspect type to optimize for Arrays, Strings, etc
   return [...iterable].join(sep);
 };
-
